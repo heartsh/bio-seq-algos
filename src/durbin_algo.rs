@@ -1,12 +1,6 @@
 use utils::*;
 use std::f64::NEG_INFINITY;
 
-pub type Probs = Vec<Prob>;
-pub type ProbMatrix = Vec<Probs>;
-pub type LogProbs = Vec<LogProb>;
-pub type LogProbMatrix = Vec<LogProbs>;
-type LogPartialPfs = Vec<LogPf>;
-type LogPpfMatrix = Vec<LogPartialPfs>;
 struct LogSaPpfMatrices {
   log_sa_forward_ppf_matrix_4_char_alignment: LogPpfMatrix,
   log_sa_forward_ppf_matrix_4_gap_1: LogPpfMatrix,
@@ -15,15 +9,6 @@ struct LogSaPpfMatrices {
   log_sa_backward_ppf_matrix_4_gap_1: LogPpfMatrix,
   log_sa_backward_ppf_matrix_4_gap_2: LogPpfMatrix,
 }
-pub type SsPair<'a> = (SeqSlice<'a>, SeqSlice<'a>);
-pub type SaScore = LogProb;
-pub type CaScoreMatrix = HashMap<CharPair, SaScore, Hasher>;
-pub struct SaScoringParams {
-  pub ca_sm: CaScoreMatrix,
-  pub base_opening_gap_penalty: SaScore,
-  pub base_extending_gap_penalty: SaScore,
-}
-pub type ProbSeqPair = (Probs, Probs);
 
 impl LogSaPpfMatrices {
   fn new(slp: &(usize, usize)) -> LogSaPpfMatrices {

@@ -21,6 +21,21 @@ pub type EpsOfTerms4LogProb = Vec<ExpPartOfTerm4LogProb>;
 pub type SliceOfEpsOfTerms4LogProb<'a> = &'a[ExpPartOfTerm4LogProb];
 pub type Hasher = BuildHasherDefault<FnvHasher>;
 pub type CharPair = (Char, Char);
+pub type Probs = Vec<Prob>;
+pub type ProbMatrix = Vec<Probs>;
+pub type LogProbs = Vec<LogProb>;
+pub type LogProbMatrix = Vec<LogProbs>;
+pub type LogPartialPfs = Vec<LogPf>;
+pub type LogPpfMatrix = Vec<LogPartialPfs>;
+pub type SsPair<'a> = (SeqSlice<'a>, SeqSlice<'a>);
+pub type SaScore = LogProb;
+pub type CaScoreMatrix = HashMap<CharPair, SaScore, Hasher>;
+pub struct SaScoringParams {
+  pub ca_sm: CaScoreMatrix,
+  pub base_opening_gap_penalty: SaScore,
+  pub base_extending_gap_penalty: SaScore,
+}
+pub type ProbSeqPair = (Probs, Probs);
 
 const INVERSE_LOG2_E: LogPf = 1. / LOG2_E;
 
