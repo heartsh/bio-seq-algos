@@ -42,7 +42,7 @@ pub fn durbin_algo(seq_pair: &SsPair, sa_sps: &SaScoringParams) -> ProbMatrix {
 }
 
 #[inline]
-fn get_cap_matrix(log_cap_matrix: &LogProbMatrix) -> ProbMatrix {
+pub fn get_cap_matrix(log_cap_matrix: &LogProbMatrix) -> ProbMatrix {
   log_cap_matrix.iter().map(|xs| xs.iter().map(|&x| x.exp()).collect()).collect()
 }
 
