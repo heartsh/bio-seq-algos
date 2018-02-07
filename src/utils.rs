@@ -47,6 +47,6 @@ pub fn logsumexp(xs: SliceOfEpsOfTerms4LogPf, max: ExpPartOfTerm4LogPf) -> LogPf
 }
 
 #[inline]
-fn fast_ln(x: PartitionFunc) -> LogPf {
+pub fn fast_ln(x: PartitionFunc) -> LogPf {
   x.log2() * INVERSE_LOG2_E
 }
