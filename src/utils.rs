@@ -2,6 +2,7 @@ use std::f64::consts::LOG2_E;
 pub use std::collections::HashMap;
 use fnv::FnvHasher;
 use std::hash::BuildHasherDefault;
+pub use std::f64::NEG_INFINITY;
 
 pub type Char = u8;
 pub type Seq = Vec<Char>;
@@ -10,9 +11,6 @@ pub type Prob = f64;
 pub type LogProb = Prob;
 pub type PartitionFunc = Prob;
 pub type LogPf = PartitionFunc;
-pub type Pos = usize;
-pub type PosPair = (Pos, Pos);
-pub type Energy = Prob;
 pub type ExpPartOfTerm4LogPf = PartitionFunc;
 pub type EpsOfTerms4LogPf = Vec<ExpPartOfTerm4LogPf>;
 pub type SliceOfEpsOfTerms4LogPf<'a> = &'a[ExpPartOfTerm4LogPf];

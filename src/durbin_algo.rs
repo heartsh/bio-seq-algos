@@ -1,13 +1,12 @@
 use utils::*;
-use std::f64::NEG_INFINITY;
 
-struct LogSaPpfMatrices {
-  log_sa_forward_ppf_matrix_4_char_alignment: LogPpfMatrix,
-  log_sa_forward_ppf_matrix_4_gap_1: LogPpfMatrix,
-  log_sa_forward_ppf_matrix_4_gap_2: LogPpfMatrix,
-  log_sa_backward_ppf_matrix_4_char_alignment: LogPpfMatrix,
-  log_sa_backward_ppf_matrix_4_gap_1: LogPpfMatrix,
-  log_sa_backward_ppf_matrix_4_gap_2: LogPpfMatrix,
+pub struct LogSaPpfMatrices {
+  pub log_sa_forward_ppf_matrix_4_char_alignment: LogPpfMatrix,
+  pub log_sa_forward_ppf_matrix_4_gap_1: LogPpfMatrix,
+  pub log_sa_forward_ppf_matrix_4_gap_2: LogPpfMatrix,
+  pub log_sa_backward_ppf_matrix_4_char_alignment: LogPpfMatrix,
+  pub log_sa_backward_ppf_matrix_4_gap_1: LogPpfMatrix,
+  pub log_sa_backward_ppf_matrix_4_gap_2: LogPpfMatrix,
 }
 
 impl LogSaPpfMatrices {
@@ -77,7 +76,7 @@ pub fn get_cap_matrix_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringPara
 }
 
 #[inline]
-fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaScoringParams) -> LogSaPpfMatrices {
+pub fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaScoringParams) -> LogSaPpfMatrices {
   let mut log_sa_ppf_matrices = LogSaPpfMatrices::new(slp);
   log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[0][0] = sa_sps.ca_sm[&(sp.0[0], sp.1[0])];
   for i in 1 .. slp.0 {
@@ -156,7 +155,7 @@ fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaScoring
 }
 
 #[inline]
-fn get_log_char_alignment_prob_matrix(log_sa_ppf_matrices: &LogSaPpfMatrices, slp: &(usize, usize)) -> LogProbMatrix {
+pub fn get_log_char_alignment_prob_matrix(log_sa_ppf_matrices: &LogSaPpfMatrices, slp: &(usize, usize)) -> LogProbMatrix {
   let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
   let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[slp.0 - 1][slp.1 - 1];
   eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
