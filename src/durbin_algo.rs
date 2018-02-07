@@ -47,6 +47,13 @@ fn get_cap_matrix(log_cap_matrix: &LogProbMatrix) -> ProbMatrix {
 }
 
 #[inline]
+pub fn get_log_cap_matrix(seq_pair: &SsPair, sa_sps: &SaScoringParams) -> LogProbMatrix {
+  let seq_len_pair = (seq_pair.0.len(), seq_pair.1.len());
+  let log_sa_ppf_matrices = get_log_sa_ppf_matrices(seq_pair, &seq_len_pair, sa_sps);
+  get_log_char_alignment_prob_matrix(&log_sa_ppf_matrices, &seq_len_pair)
+}
+
+#[inline]
 pub fn get_cap_matrix_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams) -> (ProbMatrix, ProbSeqPair) {
   let slp = (sp.0.len(), sp.1.len());
   let log_sa_ppf_matrices = get_log_sa_ppf_matrices(sp, &slp, sa_sps);
@@ -155,7 +162,7 @@ pub fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaSco
 }
 
 #[inline]
-pub fn get_log_char_alignment_prob_matrix(log_sa_ppf_matrices: &LogSaPpfMatrices, slp: &(usize, usize)) -> LogProbMatrix {
+fn get_log_char_alignment_prob_matrix(log_sa_ppf_matrices: &LogSaPpfMatrices, slp: &(usize, usize)) -> LogProbMatrix {
   let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
   let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[slp.0 - 1][slp.1 - 1];
   eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
