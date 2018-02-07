@@ -2,7 +2,7 @@
 name = "bio-seq-algos"
 version = "0.1.1"
 authors = ["heartsh <heartsh@heartsh.io>"]
-description = "Algorithms about Biological Sequences"
+description = "\"bio-seq-algos\", Library of Algorithms about Biological Sequences"
 repository = "https://github.com/heartsh/bio-seq-algos"
 readme = "README.md"
 keywords = ["bioinformatics", "biological-sequence", "secondary-structure"]
