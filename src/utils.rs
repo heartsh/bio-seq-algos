@@ -34,6 +34,8 @@ pub struct SaScoringParams {
   pub base_extending_gap_penalty: SaScore,
 }
 pub type ProbSeqPair = (Probs, Probs);
+pub type Pos = usize;
+pub type PosPair = (Pos, Pos);
 
 const INVERSE_LOG2_E: LogPf = 1. / LOG2_E;
 

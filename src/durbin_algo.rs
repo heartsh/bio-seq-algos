@@ -87,24 +87,23 @@ pub fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaSco
   let mut log_sa_ppf_matrices = LogSaPpfMatrices::new(slp);
   log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[0][0] = sa_sps.ca_sm[&(sp.0[0], sp.1[0])];
   for i in 1 .. slp.0 {
-    log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i][0] = sa_sps.base_opening_gap_penalty + (i - 1) as SaScore * sa_sps.base_extending_gap_penalty + sa_sps.ca_sm[&(sp.0[i], sp.1[0])];
+    log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i][0] = sa_sps.base_opening_gap_penalty + get_begp(&(1, i - 1), sa_sps) + sa_sps.ca_sm[&(sp.0[i], sp.1[0])];
   }
   for i in 1 .. slp.1 {
-    log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[0][i] = sa_sps.base_opening_gap_penalty + (i - 1) as SaScore * sa_sps.base_extending_gap_penalty + sa_sps.ca_sm[&(sp.0[0], sp.1[i])];
+    log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[0][i] = sa_sps.base_opening_gap_penalty + get_begp(&(1, i - 1), sa_sps) + sa_sps.ca_sm[&(sp.0[0], sp.1[i])];
   }
   for i in 1 .. slp.0 {
     for j in 1 .. slp.1 {
       let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let ca_score = sa_sps.ca_sm[&(sp.0[i], sp.1[j])];
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i - 1][j - 1] + ca_score;
+      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i - 1][j - 1];
       eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_gap_1[i - 1][j - 1] + ca_score;
+      let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_gap_1[i - 1][j - 1];
       if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
       eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_gap_2[i - 1][j - 1] + ca_score;
+      let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_gap_2[i - 1][j - 1];
       if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
       eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
+      log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf) + sa_sps.ca_sm[&(sp.0[i], sp.1[j])];
       let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
       let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_forward_ppf_matrix_4_char_alignment[i - 1][j] + sa_sps.base_opening_gap_penalty;
       eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
@@ -124,16 +123,17 @@ pub fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaSco
   log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[slp.0 - 1][slp.1 - 1] = 0.;
   log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_1[slp.0 - 1][slp.1 - 1] = 0.;
   log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_2[slp.0 - 1][slp.1 - 1] = 0.;
-  for i in 1 .. slp.0 - 1 {
-    log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i][slp.1 - 1] = sa_sps.base_opening_gap_penalty + (slp.0 - 2 - i) as SaScore * sa_sps.base_extending_gap_penalty;
+  for i in 0 .. slp.0 - 1 {
+    log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i][slp.1 - 1] = sa_sps.base_opening_gap_penalty + get_begp(&(i + 2, slp.0 - 1), sa_sps);
   }
-  for i in 1 .. slp.1 - 1 {
-    log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[slp.0 - 1][i] = sa_sps.base_opening_gap_penalty + (slp.1 - 2 - i) as SaScore * sa_sps.base_extending_gap_penalty;
+  for i in 0 .. slp.1 - 1 {
+    log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[slp.0 - 1][i] = sa_sps.base_opening_gap_penalty + get_begp(&(i + 2, slp.1 - 1), sa_sps);
   }
-  for i in (1 .. slp.0 - 1).rev() {
-    for j in (1 .. slp.1 - 1).rev() {
+  for i in (0 .. slp.0 - 1).rev() {
+    for j in (0 .. slp.1 - 1).rev() {
       let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i + 1][j + 1] + sa_sps.ca_sm[&(sp.0[i + 1], sp.1[j + 1])];
+      let ca_score = sa_sps.ca_sm[&(sp.0[i + 1], sp.1[j + 1])];
+      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i + 1][j + 1] + ca_score;
       eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
       let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_1[i + 1][j] + sa_sps.base_opening_gap_penalty;
       if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
@@ -143,14 +143,14 @@ pub fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaSco
       eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
       log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
       let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i + 1][j + 1] + sa_sps.ca_sm[&(sp.0[i + 1], sp.1[j + 1])];
+      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i + 1][j + 1] + ca_score;
       eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
       let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_1[i + 1][j] + sa_sps.base_extending_gap_penalty;
       if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
       eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
       log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_1[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
       let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i + 1][j + 1] + sa_sps.ca_sm[&(sp.0[i + 1], sp.1[j + 1])];
+      let mut max_ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i + 1][j + 1] + ca_score;
       eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
       let ep_of_term_4_log_pf = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_2[i][j + 1] + sa_sps.base_extending_gap_penalty;
       if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
@@ -180,4 +180,9 @@ fn get_log_char_alignment_prob_matrix(log_sa_ppf_matrices: &LogSaPpfMatrices, sl
     }
   }
   log_cap_matrix
+}
+
+#[inline]
+fn get_begp(pp: &PosPair, sa_sps: &SaScoringParams) -> SaScore {
+  (pp.1 + 1 - pp.0) as SaScore * sa_sps.base_extending_gap_penalty
 }
