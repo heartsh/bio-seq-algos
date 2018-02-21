@@ -121,8 +121,8 @@ pub fn get_log_sa_ppf_matrices(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaSco
     }
   }
   log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[slp.0 - 1][slp.1 - 1] = 0.;
-  log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_1[slp.0 - 1][slp.1 - 1] = 0.;
-  log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_2[slp.0 - 1][slp.1 - 1] = 0.;
+  log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_1[slp.0 - 1][slp.1 - 1] = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[slp.0 - 1][slp.1 - 1];
+  log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_gap_2[slp.0 - 1][slp.1 - 1] = log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[slp.0 - 1][slp.1 - 1];
   for i in 0 .. slp.0 - 1 {
     log_sa_ppf_matrices.log_sa_backward_ppf_matrix_4_char_alignment[i][slp.1 - 1] = sa_sps.base_opening_gap_penalty + get_begp(&(i + 2, slp.0 - 1), sa_sps);
   }

@@ -1,13 +1,13 @@
-use std::f64::consts::LOG2_E;
+use std::f32::consts::LOG2_E;
 pub use std::collections::HashMap;
 use fnv::FnvHasher;
 use std::hash::BuildHasherDefault;
-pub use std::f64::NEG_INFINITY;
+pub use std::f32::NEG_INFINITY;
 
 pub type Char = u8;
 pub type Seq = Vec<Char>;
 pub type SeqSlice<'a> = &'a[Char];
-pub type Prob = f64;
+pub type Prob = f32;
 pub type LogProb = Prob;
 pub type PartitionFunc = Prob;
 pub type LogPf = PartitionFunc;
