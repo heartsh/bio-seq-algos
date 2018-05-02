@@ -22,10 +22,10 @@ fn test_cap_mat_and_ucp_seq_pair() {
   let alphabet = b"AUGC";
   for &base_1 in alphabet {
     for &base_2 in alphabet {
-      ca_sm.insert((base_1, base_2), if base_1 == base_2 {1.} else {-1.});
+      ca_sm.insert((base_1, base_2), if base_1 == base_2 {0.1} else {-0.1});
     }
   }
-  let sa_sps = SaScoringParams::new(&ca_sm, -4., -1.);
+  let sa_sps = SaScoringParams::new(&ca_sm, -1., -0.1);
   let (cap_mat, ucp_seq_pair) = get_cap_mat_and_unaligned_char_psp(&(&TEST_SEQ_PAIR.0[..], &TEST_SEQ_PAIR.1[..]), &sa_sps);
   println!("The char. alignment mat for the seq. pair \"{}\" and \"{}\" = \"{:?}\".", String::from_utf8_lossy(&TEST_SEQ_PAIR.0[..]), String::from_utf8_lossy(&TEST_SEQ_PAIR.1[..]), &cap_mat);
   for caps in &cap_mat {
