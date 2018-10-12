@@ -1,8 +1,8 @@
-use std::f64::consts::LOG2_E;
+// use std::f64::consts::LOG2_E;
 pub use std::collections::HashMap;
 use fnv::FnvHasher;
 use std::hash::BuildHasherDefault;
-pub use std::f64::NEG_INFINITY;
+pub use std::f64::{INFINITY, NEG_INFINITY};
 
 pub type Char = u8;
 pub type Seq = Vec<Char>;
@@ -37,18 +37,19 @@ pub type ProbSeqPair = (Probs, Probs);
 pub type Pos = usize;
 pub type PosPair = (Pos, Pos);
 
-const INVERSE_LOG2_E: LogPf = 1. / LOG2_E;
+// const INVERSE_LOG2_E: LogPf = 1. / LOG2_E;
 
 #[inline]
 pub fn logsumexp(xs: SliceOfEpsOfTerms4LogPf, max: ExpPartOfTerm4LogPf) -> LogPf {
   if !max.is_finite() {
-    fast_ln(xs.iter().fold(0., |acc, &x| acc + x.exp()))
+    // fast_ln(xs.iter().fold(0., |acc, &x| acc + x.exp()))
+    xs.iter().fold(0., |acc, &x| acc + x.exp()).ln()
   } else {
-    fast_ln(xs.iter().fold(0., |acc, &x| acc + (x - max).exp())) + max
+    xs.iter().fold(0., |acc, &x| acc + (x - max).exp()).ln() + max
   }
 }
 
-#[inline]
+/* #[inline]
 pub fn fast_ln(x: PartitionFunc) -> LogPf {
   x.log2() * INVERSE_LOG2_E
-}
+} */

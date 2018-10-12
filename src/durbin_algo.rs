@@ -61,23 +61,23 @@ pub fn get_cap_mat_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams)
   let mut ucp_seq_pair = (vec![NEG_INFINITY; slp.0], vec![NEG_INFINITY; slp.1]);
   for i in 0 .. slp.0 {
     let mut eps_of_terms_4_log_prob = EpsOfTerms4LogProb::new();
-    let mut max_ep_of_term_4_log_prob = NEG_INFINITY;
+    let mut min_ep_of_term_4_log_prob = INFINITY;
     for j in 0 .. slp.1 {
       let ep_of_term_4_log_prob = log_cap_mat[i][j];
-      if max_ep_of_term_4_log_prob < ep_of_term_4_log_prob {max_ep_of_term_4_log_prob = ep_of_term_4_log_prob;}
+      if min_ep_of_term_4_log_prob > ep_of_term_4_log_prob {min_ep_of_term_4_log_prob = ep_of_term_4_log_prob;}
       eps_of_terms_4_log_prob.push(ep_of_term_4_log_prob);
     }
-    ucp_seq_pair.0[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], max_ep_of_term_4_log_prob).exp();
+    ucp_seq_pair.0[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], min_ep_of_term_4_log_prob).exp();
   }
   for i in 0 .. slp.1 {
     let mut eps_of_terms_4_log_prob = EpsOfTerms4LogProb::new();
-    let mut max_ep_of_term_4_log_prob = NEG_INFINITY;
+    let mut min_ep_of_term_4_log_prob = INFINITY;
     for j in 0 .. slp.0 {
       let ep_of_term_4_log_prob = log_cap_mat[j][i];
-      if max_ep_of_term_4_log_prob < ep_of_term_4_log_prob {max_ep_of_term_4_log_prob = ep_of_term_4_log_prob;}
+      if min_ep_of_term_4_log_prob > ep_of_term_4_log_prob {min_ep_of_term_4_log_prob = ep_of_term_4_log_prob;}
       eps_of_terms_4_log_prob.push(ep_of_term_4_log_prob);
     }
-    ucp_seq_pair.1[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], max_ep_of_term_4_log_prob).exp();
+    ucp_seq_pair.1[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], min_ep_of_term_4_log_prob).exp();
   }
   (get_cap_mat(&log_cap_mat), ucp_seq_pair)
 }
