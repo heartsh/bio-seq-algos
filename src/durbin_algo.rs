@@ -1,34 +1,34 @@
 use utils::*;
 
-pub struct LogSaPpfMats {
-  pub log_sa_forward_ppf_mat_4_char_align: LogPpfMat,
-  pub log_sa_forward_ppf_mat_4_gap_1: LogPpfMat,
-  pub log_sa_forward_ppf_mat_4_gap_2: LogPpfMat,
-  pub log_sa_backward_ppf_mat_4_char_align: LogPpfMat,
-  pub log_sa_backward_ppf_mat_4_gap_1: LogPpfMat,
-  pub log_sa_backward_ppf_mat_4_gap_2: LogPpfMat,
+pub struct SaPartFuncMats {
+  pub sa_forward_part_func_mat_4_char_align: PartFuncMat,
+  pub sa_forward_part_func_mat_4_gap_1: PartFuncMat,
+  pub sa_forward_part_func_mat_4_gap_2: PartFuncMat,
+  pub sa_backward_part_func_mat_4_char_align: PartFuncMat,
+  pub sa_backward_part_func_mat_4_gap_1: PartFuncMat,
+  pub sa_backward_part_func_mat_4_gap_2: PartFuncMat,
 }
 
-impl LogSaPpfMats {
-  fn new(slp: &(usize, usize)) -> LogSaPpfMats {
-    let ni_mat = vec![vec![NEG_INFINITY; slp.1]; slp.0];
-    LogSaPpfMats {
-      log_sa_forward_ppf_mat_4_char_align: ni_mat.clone(),
-      log_sa_forward_ppf_mat_4_gap_1: ni_mat.clone(),
-      log_sa_forward_ppf_mat_4_gap_2: ni_mat.clone(),
-      log_sa_backward_ppf_mat_4_char_align: ni_mat.clone(),
-      log_sa_backward_ppf_mat_4_gap_1: ni_mat.clone(),
-      log_sa_backward_ppf_mat_4_gap_2: ni_mat,
+impl SaPartFuncMats {
+  fn new(slp: &(usize, usize)) -> SaPartFuncMats {
+    let zero_mat = vec![vec![0.; slp.1 + 2]; slp.0 + 2];
+    SaPartFuncMats {
+      sa_forward_part_func_mat_4_char_align: zero_mat.clone(),
+      sa_forward_part_func_mat_4_gap_1: zero_mat.clone(),
+      sa_forward_part_func_mat_4_gap_2: zero_mat.clone(),
+      sa_backward_part_func_mat_4_char_align: zero_mat.clone(),
+      sa_backward_part_func_mat_4_gap_1: zero_mat.clone(),
+      sa_backward_part_func_mat_4_gap_2: zero_mat,
     }
   }
 }
 
 impl SaScoringParams {
-  pub fn new(ca_sm: &CaScoreMat, base_opening_gap_penalty: SaScore, base_extending_gap_penalty: SaScore) -> SaScoringParams {
+  pub fn new(ca_sm: &CaScoreMat, opening_gap_penalty: SaScore, extending_gap_penalty: SaScore) -> SaScoringParams {
     SaScoringParams {
       ca_sm: ca_sm.clone(),
-      base_opening_gap_penalty: base_opening_gap_penalty,
-      base_extending_gap_penalty: base_extending_gap_penalty,
+      opening_gap_penalty: opening_gap_penalty,
+      extending_gap_penalty: extending_gap_penalty,
     }
   }
 }
@@ -36,30 +36,30 @@ impl SaScoringParams {
 #[inline]
 pub fn durbin_algo(seq_pair: &SsPair, sa_sps: &SaScoringParams) -> ProbMat {
   let seq_len_pair = (seq_pair.0.len(), seq_pair.1.len());
-  let log_sa_ppf_mats = get_log_sa_ppf_mats(seq_pair, &seq_len_pair, sa_sps);
-  let log_cap_mat = get_log_char_align_prob_mat(&log_sa_ppf_mats, &seq_len_pair);
-  get_cap_mat(&log_cap_mat)
-}
-
-#[inline]
-pub fn get_cap_mat(log_cap_mat: &LogProbMat) -> ProbMat {
-  log_cap_mat.iter().map(|xs| xs.iter().map(|&x| x.exp()).collect()).collect()
-}
-
-#[inline]
-pub fn get_log_cap_mat(seq_pair: &SsPair, sa_sps: &SaScoringParams) -> LogProbMat {
-  let seq_len_pair = (seq_pair.0.len(), seq_pair.1.len());
-  let log_sa_ppf_mats = get_log_sa_ppf_mats(seq_pair, &seq_len_pair, sa_sps);
-  get_log_char_align_prob_mat(&log_sa_ppf_mats, &seq_len_pair)
+  let (sa_part_func_mats, scale_param_mat) = get_sa_part_func_mats_and_scale_param_mat(seq_pair, &seq_len_pair, sa_sps);
+  get_char_align_prob_mat(&sa_part_func_mats, &seq_len_pair, &scale_param_mat)
 }
 
 #[inline]
 pub fn get_cap_mat_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams) -> (ProbMat, ProbSeqPair) {
   let slp = (sp.0.len(), sp.1.len());
-  let log_sa_ppf_mats = get_log_sa_ppf_mats(sp, &slp, sa_sps);
-  let log_cap_mat = get_log_char_align_prob_mat(&log_sa_ppf_mats, &slp);
-  let mut ucp_seq_pair = (vec![NEG_INFINITY; slp.0], vec![NEG_INFINITY; slp.1]);
+  let cap_mat = durbin_algo(sp, sa_sps);
+  let mut ucp_seq_pair = (vec![0.; slp.0], vec![0.; slp.1]);
   for i in 0 .. slp.0 {
+    let mut ucp = 1.;
+    for j in 0 .. slp.1 {
+      ucp -= cap_mat[i][j];
+    }
+    ucp_seq_pair.0[i] = ucp;
+  }
+  for j in 0 .. slp.1 {
+    let mut ucp = 1.;
+    for i in 0 .. slp.0 {
+      ucp -= cap_mat[i][j];
+    }
+    ucp_seq_pair.1[j] = ucp;
+  }
+  /* for i in 0 .. slp.0 {
     let mut eps_of_terms_4_log_prob = EpsOfTerms4LogProb::new();
     let mut min_ep_of_term_4_log_prob = INFINITY;
     for j in 0 .. slp.1 {
@@ -79,122 +79,103 @@ pub fn get_cap_mat_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams)
     }
     ucp_seq_pair.1[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], min_ep_of_term_4_log_prob).exp();
   }
-  (get_cap_mat(&log_cap_mat), ucp_seq_pair)
+  (get_cap_mat(&log_cap_mat), ucp_seq_pair) */
+  (cap_mat, ucp_seq_pair)
 }
 
 #[inline]
-pub fn get_log_sa_ppf_mats(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaScoringParams) -> LogSaPpfMats {
-  let mut log_sa_ppf_mats = LogSaPpfMats::new(slp);
-  log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[0][0] = sa_sps.ca_sm[&(sp.0[0], sp.1[0])];
-  for i in 1 .. slp.0 {
-    log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[i][0] = sa_sps.base_opening_gap_penalty + get_begp(&(1, i - 1), sa_sps) + sa_sps.ca_sm[&(sp.0[i], sp.1[0])];
+pub fn get_sa_part_func_mats_and_scale_param_mat(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaScoringParams) -> (SaPartFuncMats, ScaleParamMat) {
+  let mut exp_sa_sps = sa_sps.clone();
+  for ca_score in exp_sa_sps.ca_sm.values_mut() {
+    *ca_score = ca_score.exp();
+  };
+  exp_sa_sps.opening_gap_penalty = exp_sa_sps.opening_gap_penalty.exp();
+  exp_sa_sps.extending_gap_penalty = exp_sa_sps.extending_gap_penalty.exp();
+  let mut sa_part_func_mats = SaPartFuncMats::new(slp);
+  let mut scale_param_mat = vec![vec![0.; slp.1 + 2]; slp.0 + 2];
+  scale_param_mat[0][0] = 1.;
+  sa_part_func_mats.sa_forward_part_func_mat_4_char_align[0][0] = 1.;
+  for i in 1 .. slp.0 + 1 {
+    scale_param_mat[i][0] = exp_sa_sps.opening_gap_penalty * get_egp(&(1, i - 1), sa_sps).exp();
+    sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][0] = 1.;
   }
-  for i in 1 .. slp.1 {
-    log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[0][i] = sa_sps.base_opening_gap_penalty + get_begp(&(1, i - 1), sa_sps) + sa_sps.ca_sm[&(sp.0[0], sp.1[i])];
+  for i in 1 .. slp.1 + 1 {
+    scale_param_mat[0][i] = exp_sa_sps.opening_gap_penalty * get_egp(&(1, i - 1), sa_sps).exp();
+    sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[0][i] = 1.;
   }
-  for i in 1 .. slp.0 {
-    for j in 1 .. slp.1 {
-      let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[i - 1][j - 1];
-      eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_1[i - 1][j - 1];
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_2[i - 1][j - 1];
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf) + sa_sps.ca_sm[&(sp.0[i], sp.1[j])];
-      let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[i - 1][j] + sa_sps.base_opening_gap_penalty;
-      eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_2[i - 1][j] + sa_sps.base_opening_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_1[i - 1][j] + sa_sps.base_extending_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_1[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
-      let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[i][j - 1] + sa_sps.base_opening_gap_penalty;
-      eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_1[i][j - 1] + sa_sps.base_opening_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_2[i][j - 1] + sa_sps.base_extending_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_2[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
+  for i in 1 .. slp.0 + 2 {
+    for j in 1 .. slp.1 + 2 {
+      let ca_score = if i == slp.0 + 1 && j == slp.1 + 1 {
+        1.
+      } else if i == slp.0 + 1 || j == slp.1 + 1 {
+        0.
+      } else {
+        exp_sa_sps.ca_sm[&(sp.0[i - 1], sp.1[j - 1])]
+      };
+      let mut scale_param = 0.;
+      let forward_part_func = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i - 1][j - 1]) * ca_score;
+      scale_param += forward_part_func;
+      sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j] = forward_part_func;
+      // sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j] = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i - 1][j - 1]) * ca_score / scale_param;
+      if i < slp.0 + 1 && j < slp.1 + 1 {
+        let forward_part_func = sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j] * exp_sa_sps.extending_gap_penalty;
+        scale_param += forward_part_func;
+        sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][j] = forward_part_func;
+        let forward_part_func = sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j - 1] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j - 1] * exp_sa_sps.extending_gap_penalty;
+        scale_param += forward_part_func;
+        sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j] = forward_part_func;
+      }
+      scale_param_mat[i][j] = scale_param;
+      sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j] /= scale_param;
+      if i < slp.0 + 1 && j < slp.1 + 1 {
+        sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][j] /= scale_param;
+        sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j] /= scale_param;
+      }
+      /* if i < slp.0 + 1 && j < slp.1 + 1 {
+        sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][j] = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j] * exp_sa_sps.extending_gap_penalty) / scale_param;
+        sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j] = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j - 1] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j - 1] * exp_sa_sps.extending_gap_penalty) / scale_param;
+      } */
     }
   }
-  log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[slp.0 - 1][slp.1 - 1] = 0.;
-  log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_1[slp.0 - 1][slp.1 - 1] = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[slp.0 - 1][slp.1 - 1];
-  log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_2[slp.0 - 1][slp.1 - 1] = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[slp.0 - 1][slp.1 - 1];
-  for i in 0 .. slp.0 - 1 {
-    log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[i][slp.1 - 1] = sa_sps.base_opening_gap_penalty + get_begp(&(i + 2, slp.0 - 1), sa_sps);
-  }
-  for i in 0 .. slp.1 - 1 {
-    log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[slp.0 - 1][i] = sa_sps.base_opening_gap_penalty + get_begp(&(i + 2, slp.1 - 1), sa_sps);
-  }
-  for i in (0 .. slp.0 - 1).rev() {
-    for j in (0 .. slp.1 - 1).rev() {
-      let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let ca_score = sa_sps.ca_sm[&(sp.0[i + 1], sp.1[j + 1])];
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[i + 1][j + 1] + ca_score;
-      eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_1[i + 1][j] + sa_sps.base_opening_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_2[i][j + 1] + sa_sps.base_opening_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
-      let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[i + 1][j + 1] + ca_score;
-      eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_2[i + 1][j] + sa_sps.base_opening_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_1[i + 1][j] + sa_sps.base_extending_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_1[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
-      let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-      let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[i + 1][j + 1] + ca_score;
-      eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_1[i][j + 1] + sa_sps.base_opening_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_2[i][j + 1] + sa_sps.base_extending_gap_penalty;
-      if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-      eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-      log_sa_ppf_mats.log_sa_backward_ppf_mat_4_gap_2[i][j] = logsumexp(&eps_of_terms_4_log_pf[..], max_ep_of_term_4_log_pf);
-    }
-  }
-  log_sa_ppf_mats
-}
-
-#[inline]
-fn get_log_char_align_prob_mat(log_sa_ppf_mats: &LogSaPpfMats, slp: &(usize, usize)) -> LogProbMat {
-  let mut eps_of_terms_4_log_pf = EpsOfTerms4LogPf::new();
-  let mut max_ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[slp.0 - 1][slp.1 - 1];
-  eps_of_terms_4_log_pf.push(max_ep_of_term_4_log_pf);
-  let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_1[slp.0 - 1][slp.1 - 1];
-  if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-  eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-  let ep_of_term_4_log_pf = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_gap_2[slp.0 - 1][slp.1 - 1];
-  if max_ep_of_term_4_log_pf < ep_of_term_4_log_pf {max_ep_of_term_4_log_pf = ep_of_term_4_log_pf;}
-  eps_of_terms_4_log_pf.push(ep_of_term_4_log_pf);
-  let log_sa_ppf = logsumexp(&eps_of_terms_4_log_pf, max_ep_of_term_4_log_pf);
-  let mut log_cap_mat = vec![vec![NEG_INFINITY; slp.1]; slp.0];
+  sa_part_func_mats.sa_backward_part_func_mat_4_char_align[slp.0 + 1][slp.1 + 1] = 1. / scale_param_mat[slp.0 + 1][slp.1 + 1];
   for i in 0 .. slp.0 {
-    for j in 0 .. slp.1 {
-      log_cap_mat[i][j] = log_sa_ppf_mats.log_sa_forward_ppf_mat_4_char_align[i][j] + log_sa_ppf_mats.log_sa_backward_ppf_mat_4_char_align[i][j] - log_sa_ppf;
+    sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][slp.1 + 1] = exp_sa_sps.opening_gap_penalty * get_egp(&(i, slp.0 - 1), sa_sps).exp() / scale_param_mat[i][slp.1 + 1];
+  }
+  for i in 0 .. slp.1 {
+    sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[slp.0 + 1][i] = exp_sa_sps.opening_gap_penalty * get_egp(&(i, slp.1 - 1), sa_sps).exp() / scale_param_mat[slp.0 + 1][i];
+  }
+  for i in (0 .. slp.0 + 1).rev() {
+    for j in (0 .. slp.1 + 1).rev() {
+      let ca_score = if i == slp.0 && j == slp.1 {
+        1.
+      } else if i == slp.0 || j == slp.1 {
+        0.
+      } else {
+        exp_sa_sps.ca_sm[&(sp.0[i], sp.1[j])]
+      };
+      let scale_param = scale_param_mat[i][j];
+      sa_part_func_mats.sa_backward_part_func_mat_4_char_align[i][j] = (sa_part_func_mats.sa_backward_part_func_mat_4_char_align[i + 1][j + 1] * ca_score + (sa_part_func_mats.sa_backward_part_func_mat_4_gap_1[i + 1][j] + sa_part_func_mats.sa_backward_part_func_mat_4_gap_2[i][j + 1]) * exp_sa_sps.opening_gap_penalty) / scale_param;
+      if i > 0 && j > 0 {
+        sa_part_func_mats.sa_backward_part_func_mat_4_gap_1[i][j] = (sa_part_func_mats.sa_backward_part_func_mat_4_char_align[i + 1][j + 1] * ca_score + sa_part_func_mats.sa_backward_part_func_mat_4_gap_1[i + 1][j] * exp_sa_sps.extending_gap_penalty) / scale_param;
+        sa_part_func_mats.sa_backward_part_func_mat_4_gap_2[i][j] = (sa_part_func_mats.sa_backward_part_func_mat_4_char_align[i + 1][j + 1] * ca_score + sa_part_func_mats.sa_backward_part_func_mat_4_gap_2[i][j + 1] * exp_sa_sps.extending_gap_penalty) / scale_param;
+      }
     }
   }
-  log_cap_mat
+  (sa_part_func_mats, scale_param_mat)
 }
 
 #[inline]
-fn get_begp(pp: &PosPair, sa_sps: &SaScoringParams) -> SaScore {
-  (pp.1 + 1 - pp.0) as SaScore * sa_sps.base_extending_gap_penalty
+fn get_char_align_prob_mat(sa_part_func_mats: &SaPartFuncMats, slp: &(usize, usize), scale_param_mat: &ScaleParamMat) -> ProbMat {
+  let mut cap_mat = vec![vec![0.; slp.1]; slp.0];
+  for i in 1 .. slp.0 + 1 {
+    for j in 1 .. slp.1 + 1 {
+      cap_mat[i - 1][j - 1] = scale_param_mat[i][j] * sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j] * sa_part_func_mats.sa_backward_part_func_mat_4_char_align[i][j];
+    }
+  }
+  cap_mat
+}
+
+#[inline]
+fn get_egp(pp: &PosPair, sa_sps: &SaScoringParams) -> SaScore {
+  (pp.1 + 1 - pp.0) as SaScore * sa_sps.extending_gap_penalty
 }
