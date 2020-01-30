@@ -1,6 +1,6 @@
 [package]
 name = "bio-seq-algos"
-version = "0.1.11"
+version = "0.1.13"
 authors = ["heartsh <heartsh@heartsh.io>"]
 description = "\"bio-seq-algos\", Library of Algorithms about Biological Sequences"
 repository = "https://github.com/heartsh/bio-seq-algos"
