@@ -59,27 +59,6 @@ pub fn get_cap_mat_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams)
     }
     ucp_seq_pair.1[j] = ucp;
   }
-  /* for i in 0 .. slp.0 {
-    let mut eps_of_terms_4_log_prob = EpsOfTerms4LogProb::new();
-    let mut min_ep_of_term_4_log_prob = INFINITY;
-    for j in 0 .. slp.1 {
-      let ep_of_term_4_log_prob = log_cap_mat[i][j];
-      if min_ep_of_term_4_log_prob > ep_of_term_4_log_prob {min_ep_of_term_4_log_prob = ep_of_term_4_log_prob;}
-      eps_of_terms_4_log_prob.push(ep_of_term_4_log_prob);
-    }
-    ucp_seq_pair.0[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], min_ep_of_term_4_log_prob).exp();
-  }
-  for i in 0 .. slp.1 {
-    let mut eps_of_terms_4_log_prob = EpsOfTerms4LogProb::new();
-    let mut min_ep_of_term_4_log_prob = INFINITY;
-    for j in 0 .. slp.0 {
-      let ep_of_term_4_log_prob = log_cap_mat[j][i];
-      if min_ep_of_term_4_log_prob > ep_of_term_4_log_prob {min_ep_of_term_4_log_prob = ep_of_term_4_log_prob;}
-      eps_of_terms_4_log_prob.push(ep_of_term_4_log_prob);
-    }
-    ucp_seq_pair.1[i] = 1. - logsumexp(&eps_of_terms_4_log_prob[..], min_ep_of_term_4_log_prob).exp();
-  }
-  (get_cap_mat(&log_cap_mat), ucp_seq_pair) */
   (cap_mat, ucp_seq_pair)
 }
 
@@ -116,7 +95,6 @@ pub fn get_sa_part_func_mats_and_scale_param_mat(sp: &SsPair, slp: &(usize, usiz
       let forward_part_func = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i - 1][j - 1]) * ca_score;
       scale_param += forward_part_func;
       sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j] = forward_part_func;
-      // sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j] = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j - 1] + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i - 1][j - 1]) * ca_score / scale_param;
       if i < slp.0 + 1 && j < slp.1 + 1 {
         let forward_part_func = sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j] * exp_sa_sps.extending_gap_penalty;
         scale_param += forward_part_func;
@@ -131,10 +109,6 @@ pub fn get_sa_part_func_mats_and_scale_param_mat(sp: &SsPair, slp: &(usize, usiz
         sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][j] /= scale_param;
         sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j] /= scale_param;
       }
-      /* if i < slp.0 + 1 && j < slp.1 + 1 {
-        sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i][j] = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i - 1][j] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_1[i - 1][j] * exp_sa_sps.extending_gap_penalty) / scale_param;
-        sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j] = (sa_part_func_mats.sa_forward_part_func_mat_4_char_align[i][j - 1] * exp_sa_sps.opening_gap_penalty + sa_part_func_mats.sa_forward_part_func_mat_4_gap_2[i][j - 1] * exp_sa_sps.extending_gap_penalty) / scale_param;
-      } */
     }
   }
   sa_part_func_mats.sa_backward_part_func_mat_4_char_align[slp.0 + 1][slp.1 + 1] = 1. / scale_param_mat[slp.0 + 1][slp.1 + 1];
