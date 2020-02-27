@@ -33,14 +33,12 @@ impl SaScoringParams {
   }
 }
 
-#[inline]
 pub fn durbin_algo(seq_pair: &SsPair, sa_sps: &SaScoringParams) -> ProbMat {
   let seq_len_pair = (seq_pair.0.len(), seq_pair.1.len());
   let (sa_part_func_mats, scale_param_mat) = get_sa_part_func_mats_and_scale_param_mat(seq_pair, &seq_len_pair, sa_sps);
   get_char_align_prob_mat(&sa_part_func_mats, &seq_len_pair, &scale_param_mat)
 }
 
-#[inline]
 pub fn get_cap_mat_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams) -> (ProbMat, ProbSeqPair) {
   let slp = (sp.0.len(), sp.1.len());
   let cap_mat = durbin_algo(sp, sa_sps);
@@ -62,7 +60,6 @@ pub fn get_cap_mat_and_unaligned_char_psp(sp: &SsPair, sa_sps: &SaScoringParams)
   (cap_mat, ucp_seq_pair)
 }
 
-#[inline]
 pub fn get_sa_part_func_mats_and_scale_param_mat(sp: &SsPair, slp: &(usize, usize), sa_sps: &SaScoringParams) -> (SaPartFuncMats, ScaleParamMat) {
   let mut exp_sa_sps = sa_sps.clone();
   for ca_score in exp_sa_sps.ca_sm.values_mut() {
@@ -138,7 +135,6 @@ pub fn get_sa_part_func_mats_and_scale_param_mat(sp: &SsPair, slp: &(usize, usiz
   (sa_part_func_mats, scale_param_mat)
 }
 
-#[inline]
 fn get_char_align_prob_mat(sa_part_func_mats: &SaPartFuncMats, slp: &(usize, usize), scale_param_mat: &ScaleParamMat) -> ProbMat {
   let mut cap_mat = vec![vec![0.; slp.1]; slp.0];
   for i in 1 .. slp.0 + 1 {
@@ -149,7 +145,6 @@ fn get_char_align_prob_mat(sa_part_func_mats: &SaPartFuncMats, slp: &(usize, usi
   cap_mat
 }
 
-#[inline]
 fn get_egp(pp: &PosPair, sa_sps: &SaScoringParams) -> SaScore {
   (pp.1 + 1 - pp.0) as SaScore * sa_sps.extending_gap_penalty
 }
