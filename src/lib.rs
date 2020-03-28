@@ -1,4 +1,3 @@
-// extern crate fnv;
 extern crate rustc_hash;
 
 pub mod utils;

@@ -29,15 +29,7 @@ fn test_cap_mat_and_ucp_seq_pair() {
   }
   let sa_sps = SaScoringParams::new(&ca_sm, -11., -1.);
   let begin = precise_time_s();
-  let (cap_mat, ucp_seq_pair) = get_cap_mat_and_unaligned_char_psp(&(&TEST_SEQ_PAIR.0[..], &TEST_SEQ_PAIR.1[..]), &sa_sps);
+  let _ = get_cap_mat_and_unaligned_char_psp(&(&TEST_SEQ_PAIR.0[..], &TEST_SEQ_PAIR.1[..]), &sa_sps);
   let elapsed_time = precise_time_s() - begin;
   println!("The elapsed time  = {} [s].", elapsed_time);
-  println!("The char. alignment mat for the seq. pair \"{}\" and \"{}\" = \"{:?}\".", String::from_utf8_lossy(&TEST_SEQ_PAIR.0[..]), String::from_utf8_lossy(&TEST_SEQ_PAIR.1[..]), &cap_mat);
-  for caps in &cap_mat {
-    for &cap in caps {assert!((0. <= cap && cap <= 1.));}
-  }
-  println!("The unaligned char. probs. for the 1st seq. \"{}\" = \"{:?}\".", String::from_utf8_lossy(&TEST_SEQ_PAIR.0[..]), &ucp_seq_pair.0);
-  for ucp in ucp_seq_pair.0 {assert!((0. <= ucp && ucp <= 1.));}
-  println!("The unaligned char. probs. for the 2nd seq. \"{}\" = \"{:?}\".", String::from_utf8_lossy(&TEST_SEQ_PAIR.1[..]), &ucp_seq_pair.1);
-  for ucp in ucp_seq_pair.1 {assert!((0. <= ucp && ucp <= 1.));}
 }
