@@ -9,7 +9,7 @@ keywords = ["bioinformatics", "biological-sequence"]
 license = "MIT"
 
 [dependencies]
-rustc-hash = "1.1"
+hashbrown = "0.3"
 lazy_static = "0.1"
 time = "0.1"
 
